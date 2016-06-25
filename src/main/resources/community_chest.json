@@ -1,0 +1,23 @@
+[
+	{ "type" : "playerMoney", "income" : 50 , "description": "Grand Opening – Collect $50 from every player"},
+	{ "type" : "goto", "location":"go", "description": "Advance to Go (Collect $200)"},
+	{ "type" : "bankMoney", "income" : 200, "description": "Bank error in your favor – Collect $200"},
+	{ "type" : "bankMoney", "income" : -50, "description": "Doctor's fees – Pay $50"},
+	{ "type" : "bankMoney", "income" : 50, "description": "From sale of stock you get $50"},
+	{ "type" : "getOutOfJailFree", "description": "Get Out of Jail Free"},
+	{ "type" : "goto", "location":"jail", "description": "Go to Jail – Go directly to jail – Do not pass Go – Do not collect $200 "},
+	{ "type" : "bankMoney", "income" : 100, "description": "Holiday {Xmas} Fund matures - Receive {Collect} $100"},
+	{ "type" : "bankMoney", "income" : 20, "description": "Income tax refund – Collect $20"},
+	{ "type" : "playerMoney", "income" : 10, "description": "It is your birthday - Collect $10 from each player"},
+	{ "type" : "bankMoney", "income" : 100, "description": "Life insurance matures – Collect $100"},
+	{ "type" : "bankMoney", "income" : -100, "description": "Pay hospital fees of $100"},
+	{ "type" : "bankMoney", "income" : -150, "description": "Pay school fees of $150"},
+	{ "type" : "bankMoney", "income" : 25, "description": "Receive $25 consultancy fee"},
+	{ "type" : "assessment", "house" : 40, "hotel": 115, "description": "You are assessed for street repairs – $40 per house – $115 per hotel"},
+	{ "type" : "bankMoney", "income" : 10, "description": "You have won second prize in a beauty contest – Collect $10"},
+	{ "type" : "bankMoney", "income" : 100 , "description": "You inherit $100"}
+]
+
+	{ "type" : "bankMoney", "income" : , "description": ""},
+	{ "type" : "getOutOfJailFree", "income" : , "description": ""},
+	{ "type" : "playerMoney", "income" :  , "description": ""},
