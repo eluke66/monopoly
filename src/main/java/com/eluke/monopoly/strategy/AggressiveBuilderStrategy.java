@@ -1,17 +1,20 @@
 package com.eluke.monopoly.strategy;
 
+import static com.eluke.monopoly.strategy.StrategyUtilities.findPropertiesToUnimprove;
+import static com.eluke.monopoly.strategy.StrategyUtilities.improvableProperties;
+import static com.eluke.monopoly.strategy.StrategyUtilities.improvementsPerMonopolySet;
+import static com.eluke.monopoly.strategy.StrategyUtilities.mortgageProperties;
+import static com.eluke.monopoly.strategy.StrategyUtilities.mortgageableProperties;
+import static com.eluke.monopoly.strategy.StrategyUtilities.unmortgageableProperties;
+
 import java.util.Collection;
 import java.util.IntSummaryStatistics;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.eluke.monopoly.Game;
 import com.eluke.monopoly.MonopolySet;
@@ -20,14 +23,10 @@ import com.eluke.monopoly.Player;
 import com.eluke.monopoly.PlayerStrategy;
 import com.eluke.monopoly.Property;
 import com.eluke.monopoly.actions.ImproveProperty;
-import com.eluke.monopoly.actions.MortgageProperty;
 import com.eluke.monopoly.actions.PlayerAction;
-import com.eluke.monopoly.actions.SellImprovement;
 import com.eluke.monopoly.actions.UnmortgageProperty;
 
 public class AggressiveBuilderStrategy implements PlayerStrategy {
-	private static final Logger logger = LoggerFactory.getLogger(AggressiveBuilderStrategy.class);
-
 	private static final int MIN_HOUSES_DESIRED = 3;
 
 	@Override
@@ -44,6 +43,7 @@ public class AggressiveBuilderStrategy implements PlayerStrategy {
 			return Optional.of(new ImproveProperty(propertyToImprove.get()));
 		}
 
+		// Otherwise, unmortgage if possible
 		Optional<OwnedProperty> propertyToUnmortgage = getPropertyToUnmortgage(player, player.getCash());
 		if (propertyToUnmortgage.isPresent()) {
 			return Optional.of(new UnmortgageProperty(propertyToUnmortgage.get()));
@@ -52,9 +52,7 @@ public class AggressiveBuilderStrategy implements PlayerStrategy {
 	}
 
 	private Optional<OwnedProperty> getPropertyToUnmortgage(final Player player, final int cashAvailable) {
-		Optional<OwnedProperty> propertyToImprove = player.getOwnedProperties().stream()
-				.filter(ownedProperty -> ownedProperty.isMortgaged())
-				.filter(ownedProperty -> ownedProperty.getProperty().getUnMortgageValue() <= cashAvailable)
+		Optional<OwnedProperty> propertyToImprove = unmortgageableProperties(player.getOwnedProperties(), cashAvailable)
 				.collect(Collectors.maxBy(AggressiveBuilderStrategy::mortgagePropertiesByValue));
 		return propertyToImprove;
 	}
@@ -65,19 +63,9 @@ public class AggressiveBuilderStrategy implements PlayerStrategy {
 
 	private Optional<OwnedProperty> getPropertyToImprove(final Player player, final int cashAvailable, final Game game) {
 		Map<MonopolySet, IntSummaryStatistics> improvementsPerMonopolySet =
-				player.getOwnedProperties().stream()
-				.collect(Collectors.groupingBy(
-						op -> op.getProperty().getMonopolySet(),
-						Collectors.summarizingInt(OwnedProperty::getNumImprovements)));
+				improvementsPerMonopolySet(player.getOwnedProperties());
 
-		Optional<OwnedProperty> propertyToImprove = player.getOwnedProperties().stream()
-				.filter(ownedProperty -> ownedProperty.getProperty().canImprove())
-				.filter(ownedProperty -> ownedProperty.getNumImprovements() < (ownedProperty.getProperty().getRentCosts().length-1))
-				.filter(ownedProperty -> !ownedProperty.isMortgaged())
-				.filter(ownedProperty -> ownedProperty.isPartOfMonopoly())
-				.filter(ownedProperty -> ownedProperty.getProperty().getHouseCost() <= cashAvailable)
-				.filter(ownedProperty -> ownedProperty.getNumImprovements() == improvementsPerMonopolySet.get(ownedProperty.getProperty().getMonopolySet()).getMin())
-				.filter(ownedProperty -> game.moreImprovementsAvailable(ownedProperty.getNextImprovementType()))
+		Optional<OwnedProperty> propertyToImprove = improvableProperties(player.getOwnedProperties(), improvementsPerMonopolySet, cashAvailable, game)
 				.collect(Collectors.maxBy(AggressiveBuilderStrategy::comparePropertiesByValue));
 		return propertyToImprove;
 	}
@@ -141,91 +129,38 @@ public class AggressiveBuilderStrategy implements PlayerStrategy {
 
 	private int removeAllImprovements(final Collection<PlayerAction> actions, final int cashRequired,
 			final Collection<OwnedProperty> availableProperties, final Map<OwnedProperty, Integer> currentImprovementsPerProperty) {
-
-		int currentCashRequired = cashRequired;
-
-		while (currentCashRequired > 0) {
-			Optional<OwnedProperty> propertyToUnimprove = availableProperties.stream()
-					.filter(property -> !property.isMortgaged())
-					.filter(property -> currentImprovementsPerProperty.get(property) > 0)
-					.collect(Collectors.maxBy(AggressiveBuilderStrategy::comparePropertiesByValue));
-			if (propertyToUnimprove.isPresent()) {
-				OwnedProperty property = propertyToUnimprove.get();
-				logger.info("Unimproving " + property.getProperty().getName() + " due to sell all");
-				actions.add(new SellImprovement(property));
-				currentImprovementsPerProperty.put(property, currentImprovementsPerProperty.get(property)-1);
-				currentCashRequired -= property.getProperty().getHouseCost()/2;
-			}
-			else {
-				// No more properties fitting this description
-				break;
-			}
-		}
-		return currentCashRequired;
+		return findPropertiesToUnimprove(actions,cashRequired,availableProperties,currentImprovementsPerProperty,
+				"sell all",
+				(stream -> stream.collect(Collectors.maxBy(AggressiveBuilderStrategy::comparePropertiesByValue))));
 	}
 
 	private int removeLowValueImprovements(final Collection<PlayerAction> actions, final int cashRequired,
 			final Collection<OwnedProperty> availableProperties, final Map<OwnedProperty, Integer> currentImprovementsPerProperty) {
-
-		int currentCashRequired = cashRequired;
-		while (currentCashRequired > 0) {
-			Optional<OwnedProperty> propertyToUnimprove = availableProperties.stream()
-					.filter(property -> !property.isMortgaged())
-					.filter(property -> currentImprovementsPerProperty.get(property) > 0)
-					.filter(property -> currentImprovementsPerProperty.get(property) < MIN_HOUSES_DESIRED)
-					.collect(Collectors.maxBy(AggressiveBuilderStrategy::comparePropertiesByValue));
-
-			if (propertyToUnimprove.isPresent()) {
-				OwnedProperty property = propertyToUnimprove.get();
-				logger.info("Unimproving " + property.getProperty().getName() + " due to being a low-value improvement");
-				actions.add(new SellImprovement(property));
-				currentImprovementsPerProperty.put(property, currentImprovementsPerProperty.get(property)-1);
-				currentCashRequired -= property.getProperty().getHouseCost()/2;
-			}
-			else {
-				// No more properties fitting this description
-				break;
-			}
-		}
-		return currentCashRequired;
+		return findPropertiesToUnimprove(actions,cashRequired,availableProperties,currentImprovementsPerProperty,
+				"being a low-value improvement",
+				(stream -> stream.filter(property -> currentImprovementsPerProperty.get(property) < MIN_HOUSES_DESIRED)
+						          .collect(Collectors.maxBy(AggressiveBuilderStrategy::comparePropertiesByValue))));
 	}
 
-	private int mortgageNonMonopolies(final Collection<PlayerAction> actions, int cashRequired,
+
+	private int mortgageNonMonopolies(final Collection<PlayerAction> actions, final int cashRequired,
 			final Collection<OwnedProperty> availableProperties) {
-		List<OwnedProperty> mortgageable = availableProperties.stream()
-				.filter(property -> !property.isMortgaged())
-				.filter(property -> property.getNumImprovements() == 0)
+		List<OwnedProperty> mortgageable = mortgageableProperties(availableProperties)
 				.filter(property -> !property.isPartOfMonopoly())
 				.sorted((p1,p2) -> Integer.compare(p1.getProperty().getHouseCost(), p2.getProperty().getHouseCost()))
 				.collect(Collectors.toList());
 
-		Iterator<OwnedProperty> iterator = mortgageable.iterator();
-		while (cashRequired > 0 && iterator.hasNext()) {
-			OwnedProperty property = iterator.next();
-			logger.info("Mortgaging " + property.getProperty().getName() + " due to being not in a monopoly");
-			actions.add(new MortgageProperty(property));
-			availableProperties.remove(property);
-			cashRequired -= property.getProperty().getMortgageValue();
-		}
-		return cashRequired;
+		return mortgageProperties(mortgageable, actions, availableProperties, cashRequired, "being not in a monopoly");
 	}
 
-	private int mortgageAllProperties(final Collection<PlayerAction> actions, int cashRequired,
+	private int mortgageAllProperties(final Collection<PlayerAction> actions, final int cashRequired,
 			final Collection<OwnedProperty> availableProperties) {
 		List<OwnedProperty> mortgageable = availableProperties.stream()
 				.filter(property -> !property.isMortgaged())
 				.sorted((p1,p2) -> Integer.compare(p1.getProperty().getHouseCost(), p2.getProperty().getHouseCost()))
 				.collect(Collectors.toList());
 
-		Iterator<OwnedProperty> iterator = mortgageable.iterator();
-		while (cashRequired > 0 && iterator.hasNext()) {
-			OwnedProperty property = iterator.next();
-			logger.info("Mortgaging " + property.getProperty().getName() + " due to needing cash");
-			actions.add(new MortgageProperty(property));
-			availableProperties.remove(property);
-			cashRequired -= property.getProperty().getMortgageValue();
-		}
-		return cashRequired;
+		return mortgageProperties(mortgageable, actions, availableProperties, cashRequired, "needing cash");
 	}
 
 }
