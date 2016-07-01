@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.eluke.monopoly;
 
@@ -24,6 +24,7 @@ public class PropertyFactory {
 		int unMortgageValue = (int)(mortgageValue * 1.1);
 		int houseCosts = rawPropertyInformation.containsKey("houseCost")?intValue(rawPropertyInformation.get("houseCost")):0;
 		boolean canImprove = houseCosts > 0;
+		@SuppressWarnings("unchecked")
 		List<Double> rentCostsList = (ArrayList<Double>)rawPropertyInformation.get("rentCosts");
 
 		int[] rentCosts = rentCostsList.stream().mapToInt(new ToIntFunction<Double>() {

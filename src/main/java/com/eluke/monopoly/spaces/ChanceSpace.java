@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.eluke.monopoly.spaces;
 
@@ -8,5 +8,6 @@ package com.eluke.monopoly.spaces;
  *
  */
 public class ChanceSpace implements Space {
-
+	@Override
+	public String toString() { return "Chance"; }
 }

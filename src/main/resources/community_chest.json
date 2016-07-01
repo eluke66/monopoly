@@ -17,7 +17,3 @@
 	{ "type" : "bankMoney", "income" : 10, "description": "You have won second prize in a beauty contest – Collect $10"},
 	{ "type" : "bankMoney", "income" : 100 , "description": "You inherit $100"}
 ]
-
-	{ "type" : "bankMoney", "income" : , "description": ""},
-	{ "type" : "getOutOfJailFree", "income" : , "description": ""},
-	{ "type" : "playerMoney", "income" :  , "description": ""},

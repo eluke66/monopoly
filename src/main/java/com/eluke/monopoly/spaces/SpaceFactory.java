@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.eluke.monopoly.spaces;
 
@@ -10,6 +10,10 @@ package com.eluke.monopoly.spaces;
 public class SpaceFactory {
 	private final PropertyLocator propertyLocator;
 
+	public SpaceFactory(final PropertyLocator propertyLocator) {
+		this.propertyLocator = propertyLocator;
+	}
+
 	public Space makeSpace(final String spaceName) {
 		if (spaceName.equals("go")) {
 			return new GoSpace();
@@ -17,7 +21,7 @@ public class SpaceFactory {
 		else if (spaceName.equals("jail")) {
 			return new JailSpace();
 		}
-		else if (spaceName.equals("Go to jail")) {
+		else if (spaceName.equals("Go to Jail")) {
 			return new GoToJailSpace();
 		}
 		else if (spaceName.equals("Free Parking")) {
@@ -28,6 +32,12 @@ public class SpaceFactory {
 		}
 		else if (spaceName.equals("Chance")) {
 			return new ChanceSpace();
+		}
+		else if (spaceName.equals("Income Tax")) {
+			return new PayTheBankSpace(spaceName, 200);
+		}
+		else if (spaceName.equals("Luxury Tax")) {
+			return new PayTheBankSpace(spaceName, 100);
 		}
 		else {
 			return new PropertySpace(propertyLocator.getPropertyByName(spaceName));

@@ -1,11 +1,11 @@
 /**
- * 
+ *
  */
 package com.eluke.monopoly;
 
 /**
  * @author luke
- * 
+ *
  */
 public class Dice {
 	public static class DiceOutput {
@@ -17,6 +17,11 @@ public class Dice {
 		}
 		public boolean isDouble() {
 			return firstDie == secondDie;
+		}
+
+		@Override
+		public String toString() {
+			return "" + firstDie + "," + secondDie;
 		}
 	}
 

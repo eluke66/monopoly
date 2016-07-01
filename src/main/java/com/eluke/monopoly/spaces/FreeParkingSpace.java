@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.eluke.monopoly.spaces;
 
@@ -9,4 +9,6 @@ package com.eluke.monopoly.spaces;
  */
 public class FreeParkingSpace implements Space {
 
+	@Override
+	public String toString() { return "Free Parking"; }
 }

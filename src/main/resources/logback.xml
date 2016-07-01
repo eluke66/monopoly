@@ -1,0 +1,20 @@
+<configuration>
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<layout>
+			<Pattern>Turn %X{Turn} | %X{Player} | %m%n</Pattern>
+		</layout>
+	</appender>
+	
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>/tmp/monopoly.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>Turn %X{Turn} | %X{Player} | %m%n</pattern>
+        </encoder>
+    </appender>
+	
+	<root level="info">
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="FILE" />
+	</root>
+</configuration>
